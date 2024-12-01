@@ -5,11 +5,6 @@
 - [Installation](#installation)
 - [Endpoints](#endpoints)
 
-## Introduction
-
-Teams API Service is designed to streamline the management of teams-related data.
-
-
 ## Installation
 
 1. Clone the repository:
