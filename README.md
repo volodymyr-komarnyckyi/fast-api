@@ -4,7 +4,6 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Endpoints](#endpoints)
-- [Presentation](#presentation)
 
 ## Introduction
 

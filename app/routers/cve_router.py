@@ -43,3 +43,17 @@ def get_known_ransomware_cve_endpoint():
     known_ransomware_cve = get_known_ransomware_cve(cve_data)
 
     return {"count": 10, "vulnerabilities": known_ransomware_cve[:10]}
+
+
+@router.get("/get", response_model=CVEListResponse)
+def search_cve(query: str):
+    cve_data = load_cve_data()
+
+    if 'vulnerabilities' not in cve_data:
+        raise HTTPException(status_code=500, detail="vulnerabilities key not found in JSON response")
+
+    matched_cve = [
+        cve for cve in cve_data['vulnerabilities'] if query.lower() in cve['shortDescription'].lower()
+    ]
+
+    return {"count": len(matched_cve), "vulnerabilities": matched_cve}
