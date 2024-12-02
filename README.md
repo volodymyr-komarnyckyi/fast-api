@@ -41,6 +41,7 @@
    "CVEs" : 
                    "http://127.0.0.1:8001/get/all/"
                    "http://127.0.0.1:8001/get/known/"
+                   "http://127.0.0.1:8001/get/new/"
                    "http://127.0.0.1:8001/get?query="
    ```
 
