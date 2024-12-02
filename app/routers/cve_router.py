@@ -1,59 +1,69 @@
-from app.services import load_cve_data, get_recent_cve, get_new_cve, get_known_ransomware_cve
 from fastapi import APIRouter, HTTPException
 from app.models import CVEListResponse
-
+from app.db import (
+    get_known_ransomware_cve,
+    get_all_cve,
+    get_new_cve,
+    search_cve,
+    init_db,
+)
+import json
 
 router = APIRouter(tags=["CVE"])
 
 
+@router.get("/init-db")
+def initialize_database():
+    import os
+    try:
+        file_path = "/home/volodymyr/FastAPI/exploits.json"
+        with open(file_path, "r") as file:
+            data = json.load(file)["vulnerabilities"]
+        init_db(data)
+        return {"status": "Database initialized successfully"}
+    except FileNotFoundError:
+        current_path = os.getcwd()
+        raise HTTPException(
+            status_code=404,
+            detail=f"File exploits.json not found in {current_path}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error initializing database: {str(e)}"
+        )
+
+
 # Endpoint to get CVE for last 10 days
 @router.get("/get/all", response_model=CVEListResponse)
-def get_all_cve():
-    cve_data = load_cve_data()
-
-    if 'vulnerabilities' not in cve_data:
-        raise HTTPException(status_code=500, detail="vulnerabilities key not found in JSON response")
-
-    recent_cve = get_recent_cve(cve_data)
-
-    return {"count": len(recent_cve), "vulnerabilities": recent_cve}
+def get_all_cve_endpoint():
+    data = get_all_cve()
+    if not data:
+        raise HTTPException(status_code=404, detail="No CVEs found")
+    return {"count": len(data), "vulnerabilities": [hit["_source"] for hit in data]}
 
 
 # Endpoint to get 10 newest CVE
 @router.get("/get/new", response_model=CVEListResponse)
 def get_new_cve_endpoint():
-    cve_data = load_cve_data()
-
-    if 'vulnerabilities' not in cve_data:
-        raise HTTPException(status_code=500, detail="vulnerabilities key not found in JSON response")
-
-    new_cve = get_new_cve(cve_data)
-
-    return {"count": len(new_cve), "vulnerabilities": new_cve}
+    data = get_new_cve()
+    if not data:
+        raise HTTPException(status_code=404, detail="No new CVEs found")
+    return {"count": len(data), "vulnerabilities": [hit["_source"] for hit in data]}
 
 
 # Endpoint to get CVE with "Known" ransomware campaign use
 @router.get("/get/known", response_model=CVEListResponse)
 def get_known_ransomware_cve_endpoint():
-    cve_data = load_cve_data()
-
-    if 'vulnerabilities' not in cve_data:
-        raise HTTPException(status_code=500, detail="vulnerabilities key not found in JSON response")
-
-    known_ransomware_cve = get_known_ransomware_cve(cve_data)
-
-    return {"count": 10, "vulnerabilities": known_ransomware_cve[:10]}
+    data = get_known_ransomware_cve()
+    if not data:
+        raise HTTPException(status_code=404, detail="No ransomware-related CVEs found")
+    return {"count": len(data), "vulnerabilities": [hit["_source"] for hit in data]}
 
 
 @router.get("/get", response_model=CVEListResponse)
-def search_cve(query: str):
-    cve_data = load_cve_data()
-
-    if 'vulnerabilities' not in cve_data:
-        raise HTTPException(status_code=500, detail="vulnerabilities key not found in JSON response")
-
-    matched_cve = [
-        cve for cve in cve_data['vulnerabilities'] if query.lower() in cve['shortDescription'].lower()
-    ]
-
-    return {"count": len(matched_cve), "vulnerabilities": matched_cve}
+def search_cve_endpoint(query: str):
+    data = search_cve(query)
+    if not data:
+        raise HTTPException(status_code=404, detail="No matching CVEs found")
+    return {"count": len(data), "vulnerabilities": [hit["_source"] for hit in data]}
